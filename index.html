@@ -3,19 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de Obstetricia</title>
+  <title>Misión Obstetricia: Guardia Hospitalaria</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f6f9; }
-    .card { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    button { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; border: none; border-radius: 5px; background-color: #0070f3; color: white; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h1 { color: #38bdf8; margin-bottom: 5px; text-shadow: 0 0 10px rgba(56,189,248,0.5); text-align: center; }
+    p.sub { color: #94a3b8; margin-bottom: 20px; text-align: center; }
+    
+    /* Panel de Estado */
+    .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; max-width: 900px; margin-bottom: 20px; }
+    .stat-card { background: #1e293b; padding: 15px; border-radius: 12px; border: 1fr solid #334155; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+    .stat-card h3 { font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-card p { font-size: 24px; font-weight: bold; color: #38bdf8; margin-top: 5px; }
+
+    /* Estructura Principal */
+    .game-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 900px; }
+    @media (max-width: 768px) { .game-container { grid-template-columns: 1fr; } }
+
+    /* Mapa de Consultorios */
+    .hospital-map { background: #1e293b; border-radius: 12px; padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .room-btn { background: #0f172a; border: 2px solid #38bdf8; border-radius: 10px; color: white; padding: 20px 10px; cursor: pointer; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+    .room-btn:hover { background: #38bdf8; color: #0f172a; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(56,189,248,0.4); }
+    .room-btn.done { border-color: #22c55e; background: #064e3b; color: #86efac; cursor: not-allowed; opacity: 0.8; }
+    .room-btn span { font-size: 24px; margin-bottom: 5px; }
+
+    /* Zona del Juego/Pregunta */
+    .interactive-zone { background: #1e293b; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #334155; }
+    .question-box h2 { font-size: 18px; color: #f35627; margin-bottom: 10px; }
+    .question-box p { font-size: 16px; line-height: 1.5; color: #e2e8f0; margin-bottom: 20px; }
+    .options-grid { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn { background: #334155; color: white; border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: 0.2s; }
+    .option-btn:hover { background: #475569; }
+
+    /* Mensaje final */
+    .feedback { text-align: center; font-weight: bold; margin-top: 15px; font-size: 16px; min-height: 24px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>¡Bienvenido al Juego de Obstetricia!</h1>
-    <p>Pregunta: ¿Cuántas semanas dura aproximadamente un embarazo a término?</p>
-    <button onclick="alert('¡Correcto! Un embarazo normal dura entre 37 y 42 semanas.')">A) 40 Semanas</button>
-    <button onclick="alert('Incorrecto, intenta de nuevo.')">B) 20 Semanas</button>
+
+  <h1>🏥 MISIÓN OBSTÉTRICA: GUARDIA DE EMERGENCIAS</h1>
+  <p class="sub">Visita los 6 consultorios del hospital y responde correctamente los casos clínicos antes de terminar tu guardia.</p>
+
+  <div class="dashboard">
+    <div class="stat-card"><h3>❤️ Vidas</h3><p id="lives">3</p></div>
+    <div class="stat-card"><h3>⭐ Puntos</h3><p id="score">0 / 100</p></div>
+    <div class="stat-card"><h3>📋 Atendidos</h3><p id="completed">0 / 6</p></div>
+    <div class="stat-card"><h3>⏱️ Tiempo</h3><p id="timer">02:00</p></div>
   </div>
+
+  <div class="game-container">
+    <!-- Mapa de Consultorios -->
+    <div class="hospital-map">
+      <button class="room-btn" id="room-0" onclick="enterRoom(0)"><span>🤰</span>1. Sala de Partos</button>
+      <button class="room-btn" id="room-1" onclick="enterRoom(1)"><span>🩺</span>2. Prenatal</button>
+      <button class="room-btn" id="room-2" onclick="enterRoom(2)"><span>🔬</span>3. Ecografía</button>
+      <button class="room-btn" id="room-3" onclick="enterRoom(3)"><span>👶</span>4. Neonatología</button>
+      <button class="room-btn" id="room-4" onclick="enterRoom(4)"><span>🚨</span>5. Urgencias</button>
+      <button class="room-btn" id="room-5" onclick="enterRoom(5)"><span>💊</span>6. Planificación</button>
+    </div>
+
+    <!-- Zona Interactiva -->
+    <div class="interactive-zone">
+      <div id="content-box">
+        <div class="question-box">
+          <h2 id="room-title">📍 Selecciona un consultorio</h2>
+          <p id="question-text">Haz clic en uno de los consultorios del mapa a la izquierda para atender al primer paciente.</p>
+        </div>
+        <div class="options-grid" id="options-box"></div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    let lives = 3;
+    let completedCount = 0;
+    let activeRoom = null;
+
+    const questions = [
+      {
+        room: "Sala de Partos",
+        q: "Paciente en trabajo de parto activo presenta 10 cm de dilatación. ¿En qué fase del parto se encuentra?",
+        options: ["A) Fase latente", "B) Segundo periodo (Expulsivo)", "C) Alumbramiento"],
+        correct: 1
+      },
+      {
+        room: "Control Prenatal",
+        q: "¿Cuál es la frecuencia cardíaca fetal (FCF) considerada normal?",
+        options: ["A) 110 a 160 latidos por minuto", "B) 60 a 100 latidos por minuto", "C) 180 a 220 latidos por minuto"],
+        correct: 0
+      },
+      {
+        room: "Ecografía Obstétrica",
+        q: "¿En qué trimestre se realiza la ecografía de translucencia nucal para tamizaje?",
+        options: ["A) 1er Trimestre (semanas 11-14)", "B) 2do Trimestre (semanas 20-24)", "C) 3er Trimestre (semanas 32-36)"],
+        correct: 0
+      },
+      {
+        room: "Neonatología",
+        q: "¿Qué evaluación rápida se realiza al recién nacido al minuto 1 y a los 5 minutos de vida?",
+        options: ["A) Test de Capurro", "B) Test de APGAR", "C) Escala de Glasgow"],
+        correct: 1
+      },
+      {
+        room: "Urgencias Obstétricas",
+        q: "Paciente con 34 semanas presenta presión arterial de 150/90 mmHg y proteinuria. ¿Cuál es el diagnóstico probable?",
+        options: ["A) Preeclampsia", "B) Diabetes gestacional", "C) Infección urinaria"],
+        correct: 0
+      },
+      {
+        room: "Planificación Familiar",
+        q: "¿Dentro de cuántas horas máximas se recomienda administrar la píldora de anticoncepción de emergencia?",
+        options: ["A) 24 horas", "B) 72 horas", "C) 120 horas"],
+        correct: 1
+      }
+    ];
+
+    function enterRoom(index) {
+      const btn = document.getElementById(`room-${index}`);
+      if(btn.classList.contains('done')) return;
+
+      activeRoom = index;
+      const qData = questions[index];
+      
+      document.getElementById('room-title').innerText = `📍 Consultorio: ${qData.room}`;
+      document.getElementById('question-text').innerText = qData.q;
+      
+      const optionsBox = document.getElementById('options-box');
+      optionsBox.innerHTML = '';
+      
+      qData.options.forEach((opt, idx) => {
+        const button = document.createElement('button');
+        button.className = 'option-btn';
+        button.innerText = opt;
+        button.onclick = () => answerQuestion(idx, qData.correct, index);
+        optionsBox.appendChild(button);
+      });
+      
+      document.getElementById('feedback').innerText = '';
+    }
+
+    function answerQuestion(selected, correct, roomIndex) {
+      const feedback = document.getElementById('feedback');
+      if (selected === correct) {
+        score += 20;
+        completedCount++;
+        feedback.style.color = '#22c55e';
+        feedback.innerText = '¡Respuesta Correcta! (+20 pts)';
+        
+        const btn = document.getElementById(`room-${roomIndex}`);
+        btn.classList.add('done');
+        btn.innerText = '✅ Atendido';
+
+        document.getElementById('options-box').innerHTML = '';
+      } else {
+        lives--;
+        score = Math.max(0, score - 5);
+        feedback.style.color = '#ef4444';
+        feedback.innerText = '❌ Respuesta incorrecta (-1 vida)';
+      }
+
+      updateDashboard();
+      checkGameEnd();
+    }
+
+    function updateDashboard() {
+      document.getElementById('score').innerText = `${score} / 100`;
+      document.getElementById('lives').innerText = lives;
+      document.getElementById('completed').innerText = `${completedCount} / 6`;
+    }
+
+    function checkGameEnd() {
+      if (lives <= 0) {
+        alert('💀 ¡Has agotado tus vidas! Inténtalo de nuevo.');
+        location.reload();
+      } else if (completedCount === 6) {
+        alert('🎉 ¡Felicidades! Has completado la guardia con éxito.');
+      }
+    }
+  </script>
 </body>
 </html>
